@@ -23,6 +23,15 @@
             text-align: center;
             margin-bottom: 30px;
         }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        h3 {
+            color: #555;
+            margin-top: 25px;
+        }
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -73,6 +82,195 @@
             border-radius: 5px;
             margin: 10px 0;
         }
+
+        /* Day 4: New Rating Interface Styles */
+        #rating-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #eee;
+        }
+
+        #movie-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #search-input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        #search-input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .search-result {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #dee2e6;
+        }
+
+        .search-result:hover {
+            background: #e9ecef;
+        }
+
+        .movie-info {
+            flex: 1;
+        }
+
+        .movie-info strong {
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .movie-info small {
+            color: #666;
+            display: block;
+            margin-top: 5px;
+        }
+
+        .rating-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .rating-btn {
+            padding: 8px 12px;
+            font-size: 14px;
+            border-radius: 4px;
+            min-width: 40px;
+            transition: all 0.2s;
+        }
+
+        .rating-btn:hover {
+            background: #ffc107;
+            transform: translateY(-1px);
+        }
+
+        .user-rating {
+            background: #d4edda;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-rating strong {
+            color: #155724;
+        }
+
+        .rating-score {
+            color: #ffc107;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            padding: 5px 10px;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        #get-recommendations {
+            background: #28a745;
+            padding: 15px 30px;
+            font-size: 18px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        #get-recommendations:hover {
+            background: #218838;
+        }
+
+        #recommendations-container {
+            margin-top: 20px;
+        }
+
+        .recommendation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+
+        .recommendation-card .movie-title {
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .recommendation-card .movie-stats {
+            color: #f8f9fa;
+            margin-top: 8px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 40px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .search-result {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .rating-buttons {
+                align-self: stretch;
+                justify-content: center;
+            }
+            
+            .user-rating {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -83,3 +281,39 @@
             <h2>Dataset Statistics</h2>
             <div id="stats-container" class="loading">Loading stats...</div>
         </div>
+
+        <div id="movies-section">
+            <h2>Most Popular Movies</h2>
+            <div id="movies-container" class="loading">Loading popular movies...</div>
+        </div>
+
+        <div id="rating-section">
+            <h2>Rate Movies & Get Recommendations</h2>
+            <div id="movie-search">
+                <input type="text" id="search-input" placeholder="Search movies to rate (e.g., 'Toy Story', 'Batman', 'Star Wars')..." />
+                <button onclick="searchMovies()">Search</button>
+            </div>
+            <div id="search-results"></div>
+            
+            <div id="user-ratings">
+                <h3>Your Ratings</h3>
+                <div id="rated-movies" class="empty-state">
+                    Rate some movies above to see your ratings here and get personalized recommendations!
+                </div>
+                <button id="get-recommendations" onclick="getRecommendations()">
+                    🎯 Get My Recommendations
+                </button>
+            </div>
+            
+            <div id="recommendations">
+                <h3>Recommended For You</h3>
+                <div id="recommendations-container" class="empty-state">
+                    Your personalized recommendations will appear here after you rate at least 3 movies.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
