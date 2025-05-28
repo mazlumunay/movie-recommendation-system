@@ -35,3 +35,16 @@ def get_popular_movies():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+@app.route('/api/movies/search/<query>')
+def search_movies(query):
+    """Search movies by title"""
+    movies = loader.load_movies()
+    
+    # Simple case-insensitive search
+    matching = movies[movies['title'].str.contains(query, case=False, na=False)]
+    
+    # Return top 10 matches
+    results = matching.head(10)[['movieId', 'title', 'genres']].to_dict('records')
+    return jsonify(results)
