@@ -173,3 +173,172 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+
+// Add to existing script.js
+
+let userProfile = {
+    totalRatings: 0,
+    averageRating: 0,
+    favoriteGenres: {},
+    ratingDistribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }
+};
+
+// Enhanced rate movie function with profile analysis
+function rateMovie(movieId, title, rating) {
+    userRatings[movieId] = { title, rating };
+    updateUserRatingsDisplay();
+    updateUserProfile();
+    
+    // Show recommendations button after 3+ ratings
+    if (Object.keys(userRatings).length >= 3) {
+        document.getElementById('get-recommendations').style.display = 'block';
+    }
+}
+
+// Update user profile analysis
+function updateUserProfile() {
+    const ratings = Object.values(userRatings);
+    
+    // Basic stats
+    userProfile.totalRatings = ratings.length;
+    userProfile.averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+    
+    // Rating distribution
+    userProfile.ratingDistribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    ratings.forEach(r => userProfile.ratingDistribution[r.rating]++);
+    
+    displayUserProfile();
+}
+
+// Display user profile
+function displayUserProfile() {
+    if (userProfile.totalRatings === 0) return;
+    
+    const profileHtml = `
+        <div class="user-profile">
+            <h3>📊 Your Movie Profile</h3>
+            <div class="profile-stats">
+                <div class="profile-stat">
+                    <strong>${userProfile.totalRatings}</strong><br>
+                    Movies Rated
+                </div>
+                <div class="profile-stat">
+                    <strong>${userProfile.averageRating.toFixed(1)}★</strong><br>
+                    Average Rating
+                </div>
+                <div class="profile-stat">
+                    <strong>${userProfile.ratingDistribution[5]}</strong><br>
+                    5-Star Movies
+                </div>
+                <div class="profile-stat">
+                    <strong>${((userProfile.ratingDistribution[4] + userProfile.ratingDistribution[5]) / userProfile.totalRatings * 100).toFixed(0)}%</strong><br>
+                    Liked (4-5★)
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Insert after user ratings
+    const existingProfile = document.querySelector('.user-profile');
+    if (existingProfile) {
+        existingProfile.outerHTML = profileHtml;
+    } else {
+        document.getElementById('user-ratings').insertAdjacentHTML('beforeend', profileHtml);
+    }
+}
+
+// Enhanced search results with movie details button
+async function searchMovies() {
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/api/movies/search/${encodeURIComponent(query)}`);
+        const movies = await response.json();
+        
+        const resultsHtml = movies.map(movie => `
+            <div class="search-result">
+                <div class="movie-info">
+                    <strong>${movie.title}</strong>
+                    <small>Genres: ${movie.genres}</small>
+                </div>
+                <div>
+                    <button class="movie-detail-btn" onclick="showMovieDetails(${movie.movieId})">Details</button>
+                    <div class="rating-buttons">
+                        <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 1)">1★</button>
+                        <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 2)">2★</button>
+                        <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 3)">3★</button>
+                        <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 4)">4★</button>
+                        <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 5)">5★</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        
+        document.getElementById('search-results').innerHTML = resultsHtml;
+    } catch (error) {
+        console.error('Error searching movies:', error);
+    }
+}
+
+// Show movie details in modal
+async function showMovieDetails(movieId) {
+    try {
+        const response = await fetch(`${API_BASE}/api/movies/${movieId}/details`);
+        const movie = await response.json();
+        
+        const genreTags = movie.genres.split('|').map(genre => 
+            `<span class="genre-tag">${genre}</span>`
+        ).join('');
+        
+        const modalContent = `
+            <h2>${movie.title}</h2>
+            <p><strong>Genres:</strong><br>${genreTags}</p>
+            <p><strong>Average Rating:</strong> ${movie.avg_rating.toFixed(1)}★ (${movie.rating_count} ratings)</p>
+            <p><strong>Movie ID:</strong> ${movie.movieId}</p>
+            <div style="margin-top: 20px;">
+                <strong>Rate this movie:</strong><br>
+                <div class="rating-buttons" style="margin-top: 10px;">
+                    <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 1); closeModal()">1★</button>
+                    <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 2); closeModal()">2★</button>
+                    <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 3); closeModal()">3★</button>
+                    <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 4); closeModal()">4★</button>
+                    <button class="rating-btn" onclick="rateMovie(${movie.movieId}, '${movie.title.replace(/'/g, "\\'")}', 5); closeModal()">5★</button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('modal-movie-content').innerHTML = modalContent;
+        document.getElementById('movieModal').style.display = 'block';
+    } catch (error) {
+        console.error('Error loading movie details:', error);
+    }
+}
+
+// Close modal
+function closeModal() {
+    document.getElementById('movieModal').style.display = 'none';
+}
+
+// Modal event listeners
+document.addEventListener('DOMContentLoaded', function() {
+    loadStats();
+    loadPopularMovies();
+    
+    // Enter key support for search
+    document.getElementById('search-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchMovies();
+        }
+    });
+    
+    // Modal close events
+    document.querySelector('.close').onclick = closeModal;
+    window.onclick = function(event) {
+        const modal = document.getElementById('movieModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    }
+});
