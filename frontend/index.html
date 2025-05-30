@@ -403,6 +403,65 @@
       .toast.error {
         background: #dc3545;
       }
+
+      .movie-card {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+
+      .movie-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        background: #fff;
+      }
+
+      .rating-btn {
+        padding: 8px 12px;
+        font-size: 14px;
+        border-radius: 4px;
+        min-width: 40px;
+        transition: all 0.2s ease;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+      }
+
+      .rating-btn:hover {
+        background: #ffc107;
+        color: #212529;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+      }
+
+      .search-result {
+        transition: all 0.2s ease;
+      }
+
+      .search-result:hover {
+        background: #e9ecef;
+        transform: translateX(5px);
+      }
+
+      button {
+        transition: all 0.2s ease;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+      }
+
+      .stat-card {
+        transition: all 0.2s ease;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.2);
+      }
     </style>
   </head>
   <body>
