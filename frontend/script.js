@@ -32,6 +32,7 @@ async function loadStats() {
     } catch (error) {
         document.getElementById('stats-container').innerHTML = 
             '<div class="error">Error loading stats. Make sure Flask app is running on localhost:5000</div>';
+        showToast('Failed to load statistics', 'error');
         console.error('Error loading stats:', error);
     }
 }
@@ -104,9 +105,10 @@ async function searchMovies() {
 // Rate a movie
 function rateMovie(movieId, title, rating) {
     userRatings[movieId] = { title, rating };
+    showToast(`Rated "${title}" ${rating} stars!`);
     updateUserRatingsDisplay();
+    updateUserProfile();
     
-    // Show recommendations button after 3+ ratings
     if (Object.keys(userRatings).length >= 3) {
         document.getElementById('get-recommendations').style.display = 'block';
     }
@@ -347,3 +349,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.remove(), 3000);
+}
