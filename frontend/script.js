@@ -1,7 +1,10 @@
 const API_BASE = 'http://localhost:5000';
-
+function showLoading(containerId) {
+    document.getElementById(containerId).innerHTML = '<div class="loading-container"><div class="spinner"></div></div>';
+}
 // Load and display statistics
 async function loadStats() {
+    showLoading('stats-container');
     try {
         const response = await fetch(`${API_BASE}/api/stats`);
         const stats = await response.json();
@@ -35,6 +38,7 @@ async function loadStats() {
 
 // Load and display popular movies
 async function loadPopularMovies() {
+    showLoading('movies-container');
     try {
         const response = await fetch(`${API_BASE}/api/movies/popular`);
         const movies = await response.json();
@@ -342,3 +346,4 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+
