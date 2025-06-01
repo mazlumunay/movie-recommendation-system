@@ -284,3 +284,52 @@ def get_collaborative_recs(user_ratings):
     """Helper function for collaborative filtering"""
     # Your existing collaborative filtering logic here
     pass
+
+@app.route('/api/movies/<int:movie_id>/similar')
+def get_similar_movies(movie_id):
+    """Find movies similar to the given movie"""
+    try:
+        movies = loader.load_movies()
+        ratings = loader.load_ratings()
+        
+        # Get the target movie
+        target_movie = movies[movies['movieId'] == movie_id]
+        if target_movie.empty:
+            return jsonify({"error": "Movie not found"}), 404
+        
+        target_genres = set(target_movie.iloc[0]['genres'].split('|'))
+        
+        # Find movies with similar genres
+        similar_movies = []
+        for _, movie in movies.iterrows():
+            if movie['movieId'] == movie_id:
+                continue
+                
+            if pd.isna(movie['genres']):
+                continue
+                
+            movie_genres = set(movie['genres'].split('|'))
+            genre_overlap = len(target_genres.intersection(movie_genres))
+            
+            if genre_overlap >= 2:  # At least 2 genres in common
+                # Get movie rating stats
+                movie_ratings = ratings[ratings['movieId'] == movie['movieId']]
+                if len(movie_ratings) >= 10:  # Well-rated movies only
+                    avg_rating = movie_ratings['rating'].mean()
+                    similarity_score = genre_overlap * avg_rating
+                    
+                    similar_movies.append({
+                        'movieId': int(movie['movieId']),
+                        'title': movie['title'],
+                        'genres': movie['genres'],
+                        'similarity_score': similarity_score,
+                        'avg_rating': avg_rating,
+                        'common_genres': len(target_genres.intersection(movie_genres))
+                    })
+        
+        # Sort by similarity score and return top 8
+        similar_movies.sort(key=lambda x: x['similarity_score'], reverse=True)
+        return jsonify(similar_movies[:8])
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

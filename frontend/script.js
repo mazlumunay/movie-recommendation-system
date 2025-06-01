@@ -556,3 +556,38 @@ function createRatingChart() {
         ctx.fillText(distribution[rating], index * 60 + 65, 140 - height);
     });
 }
+
+// Add to movie details modal
+async function showMovieDetails(movieId) {
+    // ... existing code ...
+    
+    // Add similar movies section
+    const similarMovies = await getSimilarMovies(movieId);
+    if (similarMovies.length > 0) {
+        modalContent += `
+            <div style="margin-top: 20px;">
+                <h3>🎬 Movies Like This</h3>
+                <div class="similar-movies-grid">
+                    ${similarMovies.map(movie => `
+                        <div class="similar-movie" onclick="showMovieDetails(${movie.movieId})">
+                            <strong>${movie.title}</strong><br>
+                            <small>${movie.avg_rating.toFixed(1)}★ • ${movie.common_genres} common genres</small>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    // ... rest of existing code ...
+}
+
+async function getSimilarMovies(movieId) {
+    try {
+        const response = await fetch(`${API_BASE}/api/movies/${movieId}/similar`);
+        return await response.json();
+    } catch (error) {
+        console.error('Error loading similar movies:', error);
+        return [];
+    }
+}
