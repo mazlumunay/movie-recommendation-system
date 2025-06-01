@@ -504,3 +504,55 @@ async function getHybridRecommendations() {
         console.error('Error getting hybrid recommendations:', error);
     }
 }
+
+// Enhanced user profile with analytics
+function updateUserProfile() {
+    const ratings = Object.values(userRatings);
+    if (ratings.length === 0) return;
+
+    // Calculate advanced metrics
+    userProfile.totalRatings = ratings.length;
+    userProfile.averageRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
+    
+    // Genre analysis
+    const genrePreferences = analyzeGenrePreferences();
+    
+    // Rating patterns
+    const ratingTrends = analyzeRatingTrends();
+    
+    // Display enhanced analytics
+    displayAdvancedAnalytics(genrePreferences, ratingTrends);
+    
+    // Show analytics section after 5+ ratings
+    if (ratings.length >= 5) {
+        document.getElementById('analytics-section').style.display = 'block';
+        createRatingChart();
+    }
+}
+
+function analyzeGenrePreferences() {
+    const genreScores = {};
+    
+    Object.values(userRatings).forEach(rating => {
+        // This would require storing genre info with ratings
+        // Simplified version for now
+        const score = rating.rating;
+        // Add genre analysis logic here
+    });
+    
+    return genreScores;
+}
+
+function createRatingChart() {
+    const ctx = document.getElementById('ratingChart').getContext('2d');
+    const distribution = userProfile.ratingDistribution;
+    
+    // Simple canvas chart (or integrate Chart.js)
+    ctx.fillStyle = '#007bff';
+    Object.keys(distribution).forEach((rating, index) => {
+        const height = distribution[rating] * 20;
+        ctx.fillRect(index * 60 + 50, 150 - height, 40, height);
+        ctx.fillText(`${rating}★`, index * 60 + 60, 170);
+        ctx.fillText(distribution[rating], index * 60 + 65, 140 - height);
+    });
+}

@@ -455,3 +455,31 @@ body {
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0, 123, 255, 0.2);
   }
+
+  #analytics-section {
+    margin-top: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    color: white;
+}
+
+#ratingChart {
+    background: white;
+    border-radius: 8px;
+    margin-top: 15px;
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.analytics-card {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
