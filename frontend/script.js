@@ -487,3 +487,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 });
+
+// Hybrid recommendation button
+async function getHybridRecommendations() {
+    try {
+        const response = await fetch(`${API_BASE}/api/recommendations/hybrid`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ratings: userRatings })
+        });
+        
+        const recommendations = await response.json();
+        displayRecommendations(recommendations, 'hybrid');
+        showToast('Hybrid recommendations loaded!');
+    } catch (error) {
+        console.error('Error getting hybrid recommendations:', error);
+    }
+}

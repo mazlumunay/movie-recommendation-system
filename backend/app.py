@@ -225,3 +225,62 @@ def get_collaborative_recommendations():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/api/recommendations/hybrid', methods=['POST'])
+def get_hybrid_recommendations():
+    """Get recommendations using hybrid approach (content + collaborative)"""
+    try:
+        user_data = request.json
+        user_ratings = user_data.get('ratings', {})
+        
+        if len(user_ratings) < 3:
+            return jsonify({"error": "Need at least 3 ratings"}), 400
+        
+        # Get both content-based and collaborative recommendations
+        content_recs = get_content_based_recs(user_ratings)
+        collab_recs = get_collaborative_recs(user_ratings)
+        
+        # Combine scores with weighted average (60% collaborative, 40% content)
+        hybrid_scores = {}
+        
+        # Add collaborative recommendations with higher weight
+        for rec in collab_recs:
+            movie_id = rec['movieId']
+            hybrid_scores[movie_id] = {
+                'score': rec['score'] * 0.6,
+                'movie': rec
+            }
+        
+        # Add content-based recommendations
+        for rec in content_recs:
+            movie_id = rec['movieId']
+            if movie_id in hybrid_scores:
+                # Average if both methods recommend it
+                hybrid_scores[movie_id]['score'] += rec['score'] * 0.4
+            else:
+                hybrid_scores[movie_id] = {
+                    'score': rec['score'] * 0.4,
+                    'movie': rec
+                }
+        
+        # Sort and return top recommendations
+        final_recs = sorted(
+            [data['movie'] for data in hybrid_scores.values()],
+            key=lambda x: hybrid_scores[x['movieId']]['score'],
+            reverse=True
+        )[:10]
+        
+        return jsonify(final_recs)
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+def get_content_based_recs(user_ratings):
+    """Helper function for content-based recommendations"""
+    # Your existing content-based logic here
+    pass
+
+def get_collaborative_recs(user_ratings):
+    """Helper function for collaborative filtering"""
+    # Your existing collaborative filtering logic here
+    pass
