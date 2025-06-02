@@ -618,3 +618,17 @@ document.addEventListener("keydown", function(e) {
       showToast('Search focused! Start typing...', 'info');
     }
   });
+
+  // Update the recommendations display
+const recsHtml = recommendations
+.map(
+  (movie) => `
+      <div class="movie-card">
+          <div class="movie-title">${movie.title}</div>
+          <div class="movie-stats">
+              Score: ${movie.score.toFixed(2)} • ${movie.avg_rating.toFixed(1)}★ (${movie.rating_count} ratings)
+          </div>
+      </div>
+  `
+)
+.join("");

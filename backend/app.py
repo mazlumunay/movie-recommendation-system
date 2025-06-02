@@ -106,7 +106,9 @@ def get_recommendations():
                         'title': movie['title'],
                         'genres': movie['genres'],
                         'score': score,
-                        'avg_rating': avg_rating
+                        'avg_rating': avg_rating,
+                        'rating_count': len(movie_ratings)  
+
                     })
         
         # Sort by score and return top 10
