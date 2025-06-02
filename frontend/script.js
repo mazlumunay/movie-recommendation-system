@@ -559,7 +559,6 @@ function createRatingChart() {
 
 // Add to movie details modal
 async function showMovieDetails(movieId) {
-    // ... existing code ...
     
     // Add similar movies section
     const similarMovies = await getSimilarMovies(movieId);
@@ -579,7 +578,6 @@ async function showMovieDetails(movieId) {
         `;
     }
     
-    // ... rest of existing code ...
 }
 
 async function getSimilarMovies(movieId) {
@@ -591,3 +589,22 @@ async function getSimilarMovies(movieId) {
         return [];
     }
 }
+
+// Modify the getRecommendations function
+async function getRecommendations() {
+    const container = document.getElementById("recommendations-container");
+    container.innerHTML = '<div class="loading-container"><div class="spinner"></div><p>Finding your perfect movies...</p></div>';
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/recommendations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ratings: userRatings }),
+      });
+  
+      const recommendations = await response.json();
+    } catch (error) {
+      container.innerHTML = '<div class="error">Error getting recommendations</div>';
+      console.error("Error getting recommendations:", error);
+    }
+  }
