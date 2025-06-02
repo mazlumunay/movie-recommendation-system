@@ -608,3 +608,13 @@ async function getRecommendations() {
       console.error("Error getting recommendations:", error);
     }
   }
+
+  // Add this to the DOMContentLoaded event listener
+document.addEventListener("keydown", function(e) {
+    // Ctrl/Cmd + K to focus search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      document.getElementById('search-input').focus();
+      showToast('Search focused! Start typing...', 'info');
+    }
+  });
