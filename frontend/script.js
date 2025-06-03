@@ -632,3 +632,25 @@ const recsHtml = recommendations
   `
 )
 .join("");
+
+async function getRandomMovie() {
+    try {
+      const response = await fetch(`${API_BASE}/api/movies/popular`);
+      const movies = await response.json();
+      const randomMovie = movies[Math.floor(Math.random() * movies.length)];
+      
+      document.getElementById('random-movie-container').innerHTML = `
+        <div class="movie-card" style="margin-top: 10px;">
+          <div class="movie-title">${randomMovie.title}</div>
+          <div class="movie-stats">${randomMovie.rating_count} ratings</div>
+          <button onclick="showMovieDetails(${randomMovie.movieId})" style="margin-top: 10px;">
+            View Details
+          </button>
+        </div>
+      `;
+      
+      showToast(`Discovered: ${randomMovie.title}`);
+    } catch (error) {
+      console.error('Error getting random movie:', error);
+    }
+  }
