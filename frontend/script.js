@@ -654,3 +654,21 @@ async function getRandomMovie() {
       console.error('Error getting random movie:', error);
     }
   }
+
+  // Modify the rateMovie function
+function rateMovie(movieId, title, rating) {
+  // Check if already rated
+  if (userRatings[movieId]) {
+    const confirmed = confirm(`You already rated "${title}" ${userRatings[movieId].rating}★. Change to ${rating}★?`);
+    if (!confirmed) return;
+  }
+  
+  userRatings[movieId] = { title, rating };
+  showToast(`Rated "${title}" ${rating} stars!`);
+  updateUserRatingsDisplay();
+  updateUserProfile();
+
+  if (Object.keys(userRatings).length >= 3) {
+    document.getElementById("get-recommendations").style.display = "block";
+  }
+}
