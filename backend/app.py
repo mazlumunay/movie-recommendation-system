@@ -6,6 +6,16 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import pandas as pd  
 
+
+# Add at the top after imports
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Resource not found", "message": "The requested movie or endpoint doesn't exist"}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"error": "Internal server error", "message": "Something went wrong on our end"}), 500
+
 app = Flask(__name__)
 CORS(app)
 
