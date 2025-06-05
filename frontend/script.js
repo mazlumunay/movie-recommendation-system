@@ -672,3 +672,22 @@ function rateMovie(movieId, title, rating) {
     document.getElementById("get-recommendations").style.display = "block";
   }
 }
+
+// Update the updateUserRatingsDisplay function
+function updateUserRatingsDisplay() {
+  const ratingsCount = Object.keys(userRatings).length;
+  const countDisplay = `<p style="color: #666; margin-bottom: 15px;">You've rated ${ratingsCount} movie${ratingsCount !== 1 ? 's' : ''}</p>`;
+  
+  const ratingsHtml = Object.entries(userRatings)
+    .map(
+      ([movieId, data]) => `
+        <div class="user-rating">
+            <strong>${data.title}</strong> - ${data.rating}★
+            <button onclick="removeRating(${movieId})" class="remove-btn">Remove</button>
+        </div>
+    `
+    )
+    .join("");
+
+  document.getElementById("rated-movies").innerHTML = countDisplay + ratingsHtml;
+}
