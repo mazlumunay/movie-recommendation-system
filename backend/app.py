@@ -1,13 +1,16 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from data_loader import MovieDataLoader
-from flask import request
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-import pandas as pd  
+import pandas as pd
 
+app = Flask(__name__)
+CORS(app)
 
-# Add at the top after imports
+loader = MovieDataLoader()
+
+# Error handlers
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({"error": "Resource not found", "message": "The requested movie or endpoint doesn't exist"}), 404
@@ -16,10 +19,26 @@ def not_found(error):
 def internal_error(error):
     return jsonify({"error": "Internal server error", "message": "Something went wrong on our end"}), 500
 
-app = Flask(__name__)
-CORS(app)
-
-loader = MovieDataLoader()
+# Validation helper
+def validate_rating_data(user_data):
+    if not user_data or 'ratings' not in user_data:
+        return False, "Missing ratings data"
+    
+    ratings = user_data['ratings']
+    if not isinstance(ratings, dict):
+        return False, "Ratings must be a dictionary"
+    
+    if len(ratings) < 3:
+        return False, "Need at least 3 ratings"
+        
+    # Validate rating values
+    for movie_id, rating_data in ratings.items():
+        if not isinstance(rating_data, dict) or 'rating' not in rating_data:
+            return False, f"Invalid rating data for movie {movie_id}"
+        if rating_data['rating'] not in [1, 2, 3, 4, 5]:
+            return False, f"Rating must be 1-5 stars for movie {movie_id}"
+    
+    return True, "Valid"
 
 @app.route('/')
 def home():
@@ -47,10 +66,6 @@ def get_popular_movies():
     
     return jsonify(popular[['movieId', 'title', 'rating_count']].to_dict('records'))
 
-if __name__ == '__main__':
-    app.run(debug=True)
-
-
 @app.route('/api/movies/search/<query>')
 def search_movies(query):
     """Search movies by title"""
@@ -63,23 +78,88 @@ def search_movies(query):
     results = matching.head(10)[['movieId', 'title', 'genres']].to_dict('records')
     return jsonify(results)
 
-
-# Add this new endpoint
-@app.route('/api/recommendations', methods=['POST'])
-def get_recommendations():
-    """Get movie recommendations based on user ratings"""
+@app.route('/api/movies/<int:movie_id>/details')
+def get_movie_details(movie_id):
+    """Get detailed information about a specific movie"""
     try:
-        user_data = request.json
-        user_ratings = user_data.get('ratings', {})
-        
-        if len(user_ratings) < 3:
-            return jsonify({"error": "Need at least 3 ratings"}), 400
-        
-        # Load data
         movies = loader.load_movies()
         ratings = loader.load_ratings()
         
-        # Simple content-based recommendation
+        movie = movies[movies['movieId'] == movie_id]
+        if movie.empty:
+            return jsonify({"error": "Movie not found"}), 404
+        
+        movie_data = movie.iloc[0]
+        movie_ratings = ratings[ratings['movieId'] == movie_id]
+        
+        details = {
+            'movieId': int(movie_data['movieId']),
+            'title': movie_data['title'],
+            'genres': movie_data['genres'],
+            'avg_rating': float(movie_ratings['rating'].mean()) if not movie_ratings.empty else 0,
+            'rating_count': len(movie_ratings)
+        }
+        
+        return jsonify(details)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/movies/<int:movie_id>/similar')
+def get_similar_movies(movie_id):
+    """Find movies similar to the given movie"""
+    try:
+        movies = loader.load_movies()
+        ratings = loader.load_ratings()
+        
+        # Get the target movie
+        target_movie = movies[movies['movieId'] == movie_id]
+        if target_movie.empty:
+            return jsonify({"error": "Movie not found"}), 404
+        
+        target_genres = set(target_movie.iloc[0]['genres'].split('|'))
+        
+        # Find movies with similar genres
+        similar_movies = []
+        for _, movie in movies.iterrows():
+            if movie['movieId'] == movie_id:
+                continue
+                
+            if pd.isna(movie['genres']):
+                continue
+                
+            movie_genres = set(movie['genres'].split('|'))
+            genre_overlap = len(target_genres.intersection(movie_genres))
+            
+            if genre_overlap >= 2:  # At least 2 genres in common
+                # Get movie rating stats
+                movie_ratings = ratings[ratings['movieId'] == movie['movieId']]
+                if len(movie_ratings) >= 10:  # Well-rated movies only
+                    avg_rating = movie_ratings['rating'].mean()
+                    similarity_score = genre_overlap * avg_rating
+                    
+                    similar_movies.append({
+                        'movieId': int(movie['movieId']),
+                        'title': movie['title'],
+                        'genres': movie['genres'],
+                        'similarity_score': similarity_score,
+                        'avg_rating': avg_rating,
+                        'common_genres': len(target_genres.intersection(movie_genres))
+                    })
+        
+        # Sort by similarity score and return top 8
+        similar_movies.sort(key=lambda x: x['similarity_score'], reverse=True)
+        return jsonify(similar_movies[:8])
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# Helper functions for recommendation algorithms
+def get_content_based_recs(user_ratings):
+    """Helper function for content-based recommendations"""
+    try:
+        movies = loader.load_movies()
+        ratings = loader.load_ratings()
+        
         # Get genres of liked movies (4+ stars)
         liked_movie_ids = [int(mid) for mid, data in user_ratings.items() if data['rating'] >= 4]
         
@@ -117,57 +197,20 @@ def get_recommendations():
                         'genres': movie['genres'],
                         'score': score,
                         'avg_rating': avg_rating,
-                        'rating_count': len(movie_ratings)  
-
+                        'rating_count': len(movie_ratings)
                     })
         
-        # Sort by score and return top 10
+        # Sort by score
         recommendations.sort(key=lambda x: x['score'], reverse=True)
-        return jsonify(recommendations[:10])
+        return recommendations
         
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    
+        print(f"Error in content-based recommendations: {e}")
+        return []
 
-
-    # Add new endpoints
-
-@app.route('/api/movies/<int:movie_id>/details')
-def get_movie_details(movie_id):
-    """Get detailed information about a specific movie"""
+def get_collaborative_recs(user_ratings):
+    """Helper function for collaborative filtering"""
     try:
-        movies = loader.load_movies()
-        ratings = loader.load_ratings()
-        
-        movie = movies[movies['movieId'] == movie_id]
-        if movie.empty:
-            return jsonify({"error": "Movie not found"}), 404
-        
-        movie_data = movie.iloc[0]
-        movie_ratings = ratings[ratings['movieId'] == movie_id]
-        
-        details = {
-            'movieId': int(movie_data['movieId']),
-            'title': movie_data['title'],
-            'genres': movie_data['genres'],
-            'avg_rating': float(movie_ratings['rating'].mean()) if not movie_ratings.empty else 0,
-            'rating_count': len(movie_ratings)
-        }
-        
-        return jsonify(details)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/recommendations/collaborative', methods=['POST'])
-def get_collaborative_recommendations():
-    """Get recommendations using collaborative filtering"""
-    try:
-        user_data = request.json
-        user_ratings = user_data.get('ratings', {})
-        
-        if len(user_ratings) < 3:
-            return jsonify({"error": "Need at least 3 ratings"}), 400
-        
         movies = loader.load_movies()
         ratings = loader.load_ratings()
         
@@ -221,7 +264,6 @@ def get_collaborative_recommendations():
         
         # Merge with movie titles and genres
         recommendations = movie_scores.merge(movies, on='movieId')
-        recommendations = recommendations.sort_values('avg_rating', ascending=False).head(10)
         
         result = []
         for _, row in recommendations.iterrows():
@@ -233,20 +275,61 @@ def get_collaborative_recommendations():
                 'similar_user_ratings': int(row['rating_count'])
             })
         
-        return jsonify(result)
+        return result
+        
+    except Exception as e:
+        print(f"Error in collaborative filtering: {e}")
+        return []
+
+@app.route('/api/recommendations', methods=['POST'])
+def get_recommendations():
+    """Get movie recommendations based on user ratings (content-based)"""
+    try:
+        user_data = request.json
+        is_valid, message = validate_rating_data(user_data)
+        
+        if not is_valid:
+            return jsonify({"error": message}), 400
+        
+        user_ratings = user_data['ratings']
+        recommendations = get_content_based_recs(user_ratings)
+        
+        return jsonify(recommendations[:10])
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+@app.route('/api/recommendations/collaborative', methods=['POST'])
+def get_collaborative_recommendations():
+    """Get recommendations using collaborative filtering"""
+    try:
+        user_data = request.json
+        is_valid, message = validate_rating_data(user_data)
+        
+        if not is_valid:
+            return jsonify({"error": message}), 400
+        
+        user_ratings = user_data['ratings']
+        recommendations = get_collaborative_recs(user_ratings)
+        
+        # Sort by score and return top 10
+        recommendations.sort(key=lambda x: x['score'], reverse=True)
+        return jsonify(recommendations[:10])
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/recommendations/hybrid', methods=['POST'])
 def get_hybrid_recommendations():
     """Get recommendations using hybrid approach (content + collaborative)"""
     try:
         user_data = request.json
-        user_ratings = user_data.get('ratings', {})
+        is_valid, message = validate_rating_data(user_data)
         
-        if len(user_ratings) < 3:
-            return jsonify({"error": "Need at least 3 ratings"}), 400
+        if not is_valid:
+            return jsonify({"error": message}), 400
+        
+        user_ratings = user_data['ratings']
         
         # Get both content-based and collaborative recommendations
         content_recs = get_content_based_recs(user_ratings)
@@ -267,8 +350,10 @@ def get_hybrid_recommendations():
         for rec in content_recs:
             movie_id = rec['movieId']
             if movie_id in hybrid_scores:
-                # Average if both methods recommend it
+                # Combine scores if both methods recommend it
                 hybrid_scores[movie_id]['score'] += rec['score'] * 0.4
+                # Use the content-based movie data (more complete)
+                hybrid_scores[movie_id]['movie'] = rec
             else:
                 hybrid_scores[movie_id] = {
                     'score': rec['score'] * 0.4,
@@ -276,72 +361,17 @@ def get_hybrid_recommendations():
                 }
         
         # Sort and return top recommendations
-        final_recs = sorted(
-            [data['movie'] for data in hybrid_scores.values()],
-            key=lambda x: hybrid_scores[x['movieId']]['score'],
-            reverse=True
-        )[:10]
+        final_recs = []
+        for movie_id, data in hybrid_scores.items():
+            movie_data = data['movie'].copy()
+            movie_data['hybrid_score'] = data['score']
+            final_recs.append(movie_data)
         
-        return jsonify(final_recs)
-        
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-def get_content_based_recs(user_ratings):
-    """Helper function for content-based recommendations"""
-    # Your existing content-based logic here
-    pass
-
-def get_collaborative_recs(user_ratings):
-    """Helper function for collaborative filtering"""
-    # Your existing collaborative filtering logic here
-    pass
-
-@app.route('/api/movies/<int:movie_id>/similar')
-def get_similar_movies(movie_id):
-    """Find movies similar to the given movie"""
-    try:
-        movies = loader.load_movies()
-        ratings = loader.load_ratings()
-        
-        # Get the target movie
-        target_movie = movies[movies['movieId'] == movie_id]
-        if target_movie.empty:
-            return jsonify({"error": "Movie not found"}), 404
-        
-        target_genres = set(target_movie.iloc[0]['genres'].split('|'))
-        
-        # Find movies with similar genres
-        similar_movies = []
-        for _, movie in movies.iterrows():
-            if movie['movieId'] == movie_id:
-                continue
-                
-            if pd.isna(movie['genres']):
-                continue
-                
-            movie_genres = set(movie['genres'].split('|'))
-            genre_overlap = len(target_genres.intersection(movie_genres))
-            
-            if genre_overlap >= 2:  # At least 2 genres in common
-                # Get movie rating stats
-                movie_ratings = ratings[ratings['movieId'] == movie['movieId']]
-                if len(movie_ratings) >= 10:  # Well-rated movies only
-                    avg_rating = movie_ratings['rating'].mean()
-                    similarity_score = genre_overlap * avg_rating
-                    
-                    similar_movies.append({
-                        'movieId': int(movie['movieId']),
-                        'title': movie['title'],
-                        'genres': movie['genres'],
-                        'similarity_score': similarity_score,
-                        'avg_rating': avg_rating,
-                        'common_genres': len(target_genres.intersection(movie_genres))
-                    })
-        
-        # Sort by similarity score and return top 8
-        similar_movies.sort(key=lambda x: x['similarity_score'], reverse=True)
-        return jsonify(similar_movies[:8])
+        final_recs.sort(key=lambda x: x['hybrid_score'], reverse=True)
+        return jsonify(final_recs[:10])
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(debug=True)
