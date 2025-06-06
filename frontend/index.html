@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Movie Recommendation System</title>
     <link rel="stylesheet" href="./styles.css" />
+    <!-- Add in <head> section -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>"
+    />
   </head>
   <body>
     <div class="container">
@@ -22,8 +27,8 @@
         </div>
       </div>
 
-      <div style="margin: 15px 0;">
-        <button onclick="getRandomMovie()" style="background: #6c757d;">
+      <div style="margin: 15px 0">
+        <button onclick="getRandomMovie()" style="background: #6c757d">
           🎲 Discover Random Movie
         </button>
       </div>
@@ -75,7 +80,6 @@
       <div id="analytics-container"></div>
       <canvas id="ratingChart" width="400" height="200"></canvas>
     </div>
-
 
     <script src="script.js"></script>
   </body>
