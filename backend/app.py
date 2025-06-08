@@ -375,3 +375,16 @@ def get_hybrid_recommendations():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+
+import time
+
+@app.before_request
+def before_request():
+    request.start_time = time.time()
+
+@app.after_request
+def after_request(response):
+    duration = time.time() - request.start_time
+    response.headers['X-Response-Time'] = f"{duration:.3f}s"
+    return response
