@@ -1,4 +1,4 @@
-body {
+stat-cardbody {
     font-family: Arial, sans-serif;
     max-width: 1200px;
     margin: 0 auto;
@@ -31,7 +31,17 @@ body {
     gap: 20px;
     margin-bottom: 30px;
   }
+
+  :root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --border-radius: 8px;
+}
   .stat-card {
+    background: var(--primary-color);
+    border-radius: var(--border-radius);
     background: #007bff;
     color: white;
     padding: 20px;
