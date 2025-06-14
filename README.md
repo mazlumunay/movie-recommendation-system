@@ -16,14 +16,14 @@ A full-stack movie recommendation system with machine learning backend.
 Coming soon...
 
 ## Daily Progress
-- Progress
-	•	Day 1: Setup
-	•	Day 2: Data prep
-	•	Day 3: Flask app
-	•	Day 4: Users
-	•	Day 5: Movies
-	•	Day 6: Ratings
-	•	Day 7: ML model
-	•	Day 8: Recommendations
-	•	Day 9: Frontend
-	•	Day 10: Done
+### Progress
+- Day 1: Setup
+- Day 2: Data prep
+- Day 3: Flask app
+- Day 4: Users
+- Day 5: Movies
+- Day 6: Ratings
+- Day 7: ML model
+- Day 8: Recommendations
+- Day 9: Frontend
+- Day 10: Done
